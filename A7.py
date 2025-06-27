@@ -33,6 +33,24 @@ print("\nCSV file....\n")
 df=pd.read_csv('products-100.csv')
 print(df)
 print(df.to_string())
+print("\nUsing Head()...\n")
+print(df.head())
+df = df.drop_duplicates()
+df = df.fillna("Not Available")
+df = df.rename(columns={'Internal ID': 'Product ID'})
+print("After rename...\n",df)
+print("\n Info of File...")
+print(df.info())
+print("\n Description of File...")
+print(df.describe())
+print("\n Shape of File...")
+print(df.shape)
+print("\n Specific column of File...")
+print(df['Name'])
+df['Premium Product'] = df['Price'] > 500
+print(df)
+
+
 
 
 
