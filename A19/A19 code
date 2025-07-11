@@ -1,0 +1,61 @@
+user_table = spark.table("meta_data")
+user_table.display()
+
+collection = user_table.collect()
+for x in collection:
+    print(x)
+
+raw_tables = {}
+for col in collection:
+    tname = col[1]
+    col_def = f"{col[2]} {col[3]}"
+    if tname not in raw_tables:
+        raw_tables[tname] = []
+    raw_tables[tname].append(col_def)
+print(raw_tables)
+
+for i,j in raw_tables.items():
+    spark.sql(f'''CREATE TABLE if not exists {i} ({','.join(j)})''')
+spark.sql('select * from user').display()
+spark.sql('select * from sales').display()
+
+
+dbutils.widgets.text("Process_name", "")
+process_name = dbutils.widgets.get("Process_name")
+
+Filtered_meta_data = user_table.filter(user_table["Process Name"] == process_name)
+display(Filtered_meta_data)
+
+Filtered_collection = Filtered_meta_data.collect()
+for row in Filtered_collection:
+    print(row)
+
+Filtered_raw_tables = {}
+for row in Filtered_collection:
+    tname = row[1]
+    col_def = f"{row[2]}"
+    if tname not in Filtered_raw_tables:
+        Filtered_raw_tables[tname] = []
+    Filtered_raw_tables[tname].append(col_def)
+print(Filtered_raw_tables)
+
+Filtered_cur_tables = {}
+for row in Filtered_collection:
+
+    tname = row[5].replace('.', '_')
+    col_def = f"{row[6]} {row[7]}"
+    if tname not in Filtered_cur_tables:
+        Filtered_cur_tables[tname] = []
+    Filtered_cur_tables[tname].append(col_def)
+print(Filtered_cur_tables)
+
+
+for tname, cols in Filtered_cur_tables.items():
+    spark.sql(f"CREATE TABLE IF NOT EXISTS default.{tname} ({','.join(cols)})")
+
+for cur_table, cur_cols in Filtered_cur_tables.items():
+    for raw_table, raw_cols in Filtered_raw_tables.items():
+        spark.sql(f"""
+            INSERT INTO default.{cur_table} ({','.join([c.split()[0] for c in cur_cols])})
+            SELECT {','.join(raw_cols)} FROM default.{raw_table}
+        """)
