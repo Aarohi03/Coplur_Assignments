@@ -1,0 +1,20 @@
+user_table = spark.table("meta_data")
+user_table.display()
+
+collection = user_table.collect()
+for x in collection:
+    print(x)
+
+raw_tables = {}
+for col in collection:
+    tname = col[1]
+    col_def = f"{col[2]} {col[3]}"
+    if tname not in raw_tables:
+        raw_tables[tname] = []
+    raw_tables[tname].append(col_def)
+print(raw_tables)
+
+for i,j in raw_tables.items():
+    spark.sql(f'''CREATE TABLE if not exists {i} ({','.join(j)})''')
+spark.sql('select * from user').display()
+spark.sql('select * from sales').display()
